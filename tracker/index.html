@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Spaced Retention — an efficient topic tracker using spaced repetition intervals to maximize long-term memory retention.">
+    <title>Spaced Retention — Study Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Ambient background orbs -->
+    <div class="ambient-bg">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <div id="app">
+        <!-- Header -->
+        <header id="app-header">
+            <div class="header-left">
+                <div class="logo-mark">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <rect x="2" y="2" width="24" height="24" rx="6" stroke="url(#logoGrad)" stroke-width="2.5"/>
+                        <path d="M9 14.5L12.5 18L19 10" stroke="url(#logoGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="logoGrad" x1="2" y1="2" x2="26" y2="26">
+                                <stop stop-color="#6366f1"/>
+                                <stop offset="1" stop-color="#a855f7"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="app-title">Spaced Retention</h1>
+                    <p class="app-subtitle" id="current-date"></p>
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-ghost" id="btn-export" title="Export data">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Export</span>
+                </button>
+                <button class="btn btn-ghost" id="btn-import" title="Import data">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <span>Import</span>
+                </button>
+                <input type="file" id="import-file" accept=".json" hidden>
+            </div>
+        </header>
+
+        <!-- Topic Tabs -->
+        <nav id="topic-tabs-bar" class="topic-tabs-bar" aria-label="Topic tabs">
+            <button type="button" class="topic-tab-control" id="btn-add-tab" title="Add topic tab">+</button>
+            <button type="button" class="topic-tab-control topic-tab-menu" title="Topic menu" aria-label="Topic menu">
+                <span></span><span></span><span></span>
+            </button>
+            <div id="topic-tabs" class="topic-tabs" role="tablist"></div>
+        </nav>
+
+        <!-- Stats Dashboard -->
+        <section id="stats-dashboard">
+            <div class="stat-card stat-due" id="stat-due-today">
+                <div class="stat-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="due-count">0</span>
+                    <span class="stat-label">Due Today</span>
+                </div>
+            </div>
+            <div class="stat-card stat-total">
+                <div class="stat-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="total-count">0</span>
+                    <span class="stat-label">Total Topics</span>
+                </div>
+            </div>
+            <div class="stat-card stat-completed">
+                <div class="stat-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="completed-count">0</span>
+                    <span class="stat-label">Fully Reviewed</span>
+                </div>
+            </div>
+            <div class="stat-card stat-streak">
+                <div class="stat-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="streak-count">0</span>
+                    <span class="stat-label">Day Streak</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Today's Due Reviews -->
+        <section id="due-section" class="glass-panel" style="display:none;">
+            <div class="section-header">
+                <h2>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    Reviews Due Today
+                </h2>
+                <button class="btn btn-sm btn-accent" id="btn-mark-all-due">Mark All Done</button>
+            </div>
+            <div id="due-list" class="due-list"></div>
+        </section>
+
+        <!-- Add Topic Form -->
+        <section id="add-section" class="glass-panel">
+            <div class="section-header">
+                <h2>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    Add New Topic
+                </h2>
+                <button class="btn btn-sm btn-ghost" id="btn-toggle-form">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+            </div>
+            <form id="add-topic-form" class="add-form">
+                <div class="form-row">
+                    <div class="form-group form-group-topic">
+                        <label for="topic-input">Topic Name</label>
+                        <input type="text" id="topic-input" placeholder="e.g. What is Python?" required autocomplete="off">
+                    </div>
+                    <div class="form-group form-group-date">
+                        <label for="date-input">Study Date</label>
+                        <input type="date" id="date-input" required>
+                    </div>
+                    <div class="form-group form-group-btn">
+                        <label>&nbsp;</label>
+                        <button type="submit" class="btn btn-primary" id="btn-add-topic">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add Topic
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <!-- Topics Table -->
+        <section id="table-section" class="glass-panel">
+            <div class="section-header">
+                <h2>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                    All Topics
+                </h2>
+                <div class="table-controls">
+                    <div class="search-box">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="search-input" placeholder="Search topics...">
+                    </div>
+                    <select id="filter-select" class="filter-select">
+                        <option value="all">All Topics</option>
+                        <option value="due">Due Today</option>
+                        <option value="overdue">Overdue</option>
+                        <option value="completed">Completed</option>
+                        <option value="in-progress">In Progress</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table id="topics-table">
+                    <thead>
+                        <tr>
+                            <th class="th-topic">Topic</th>
+                            <th class="th-date">Studied Date</th>
+                            <th class="th-review">Review 1<span class="review-label">+1 Day</span></th>
+                            <th class="th-review">Review 2<span class="review-label">+3 Days</span></th>
+                            <th class="th-review">Review 3<span class="review-label">+7 Days</span></th>
+                            <th class="th-review">Review 4<span class="review-label">+14 Days</span></th>
+                            <th class="th-review">Review 5<span class="review-label">+21 Days</span></th>
+                            <th class="th-review">Review 6<span class="review-label">+28 Days</span></th>
+                            <th class="th-review">Review 7<span class="review-label">+30 Days</span></th>
+                            <th class="th-review">Review 8<span class="review-label">+60 Days</span></th>
+                            <th class="th-progress">Progress</th>
+                            <th class="th-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topics-tbody"></tbody>
+                </table>
+            </div>
+            <div id="empty-state" class="empty-state" style="display:none;">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                <p>No topics yet. Add your first topic above to start tracking!</p>
+            </div>
+        </section>
+
+        <!-- Reset Modal -->
+        <div id="reset-modal" class="modal-overlay" style="display:none;">
+            <div class="modal glass-panel">
+                <h3>Reset Topic</h3>
+                <p>If you completely failed to recall this topic, it will be reset with today as the new study date. All review progress will be cleared.</p>
+                <p class="modal-topic-name" id="reset-topic-name"></p>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost" id="btn-cancel-reset">Cancel</button>
+                    <button class="btn btn-danger" id="btn-confirm-reset">Reset Topic</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Modal -->
+        <div id="delete-modal" class="modal-overlay" style="display:none;">
+            <div class="modal glass-panel">
+                <h3>Delete Topic</h3>
+                <p>Are you sure you want to permanently delete this topic?</p>
+                <p class="modal-topic-name" id="delete-topic-name"></p>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost" id="btn-cancel-delete">Cancel</button>
+                    <button class="btn btn-danger" id="btn-confirm-delete">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
