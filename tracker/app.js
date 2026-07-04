@@ -16,6 +16,8 @@
     const SEEDED_KEY = 'spacedRetention_seeded_v2';
     const TOPIC_TABS_KEY = 'spacedRetention_topic_tabs';
     const THEME_KEY = 'spacedRetention_theme';
+    const API_KEY_KEY = 'spacedRetention_api_key';
+    const API_BASE_URL = 'http://localhost:5000/api'; // Change this when deployed
 
     // Days added after each checkpoint (studied date for R1, prior review for R2+)
     const REVIEW_GAPS = [2, 4, 8, 15, 22, 28, 31, 61];
@@ -160,13 +162,106 @@
         setTheme(theme);
     }
 
+    // ──── API Integration ────
+    async function apiRequest(endpoint, method = 'GET', data = null) {
+        const apiKey = localStorage.getItem(API_KEY_KEY);
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        if (apiKey) {
+            headers['X-API-Key'] = apiKey;
+        }
+
+        const options = {
+            method,
+            headers
+        };
+
+        if (data) {
+            options.body = JSON.stringify(data);
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || 'API request failed');
+            }
+            return result;
+        } catch (error) {
+            console.error('API Error:', error);
+            throw error;
+        }
+    }
+
+    async function saveToCloud() {
+        const apiKey = localStorage.getItem(API_KEY_KEY);
+        if (!apiKey) return false;
+
+        try {
+            const data = {
+                [STORAGE_KEY]: topics,
+                [TOPIC_TABS_KEY]: topicTabs,
+                [STREAK_KEY]: loadStreak(),
+                [THEME_KEY]: getTheme()
+            };
+            await apiRequest('/data', 'POST', data);
+            return true;
+        } catch (error) {
+            console.error('Failed to save to cloud:', error);
+            return false;
+        }
+    }
+
+    async function loadFromCloud() {
+        const apiKey = localStorage.getItem(API_KEY_KEY);
+        if (!apiKey) return false;
+
+        try {
+            const data = await apiRequest('/data', 'GET');
+            if (data[STORAGE_KEY]) {
+                topics = data[STORAGE_KEY].value;
+                topicTabs = data[TOPIC_TABS_KEY]?.value || ['Python', 'OOPs'];
+                if (data[STREAK_KEY]) {
+                    localStorage.setItem(STREAK_KEY, JSON.stringify(data[STREAK_KEY].value));
+                }
+                if (data[THEME_KEY]) {
+                    setTheme(data[THEME_KEY].value);
+                }
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Failed to load from cloud:', error);
+            return false;
+        }
+    }
+
     // ──── Persistence ────
     function save() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(topics));
         localStorage.setItem(TOPIC_TABS_KEY, JSON.stringify(topicTabs));
+        saveToCloud(); // Try to save to cloud in background
     }
 
     function load() {
+        const apiKey = localStorage.getItem(API_KEY_KEY);
+        
+        // Try to load from cloud first if authenticated
+        if (apiKey) {
+            loadFromCloud().then(success => {
+                if (success) {
+                    render();
+                } else {
+                    loadFromLocal();
+                }
+            });
+        } else {
+            loadFromLocal();
+        }
+    }
+
+    function loadFromLocal() {
         try {
             const data = localStorage.getItem(STORAGE_KEY);
             topics = data ? JSON.parse(data) : [];
@@ -839,6 +934,83 @@
         document.getElementById('delete-modal').style.display = 'none';
     }
 
+    // ──── Authentication ────
+    let isLoginMode = true;
+
+    function openAuthModal() {
+        isLoginMode = true;
+        updateAuthModalUI();
+        document.getElementById('auth-modal').style.display = '';
+    }
+
+    function closeAuthModal() {
+        document.getElementById('auth-modal').style.display = 'none';
+        document.getElementById('auth-form').reset();
+    }
+
+    function updateAuthModalUI() {
+        const title = document.getElementById('auth-title');
+        const subtitle = document.getElementById('auth-subtitle');
+        const submitBtn = document.getElementById('btn-submit-auth');
+        const switchText = document.getElementById('auth-switch-text');
+        const switchBtn = document.getElementById('btn-switch-auth');
+
+        if (isLoginMode) {
+            title.textContent = 'Login';
+            subtitle.textContent = 'Enter your credentials to sync data across devices';
+            submitBtn.textContent = 'Login';
+            switchText.textContent = "Don't have an account?";
+            switchBtn.textContent = 'Register';
+        } else {
+            title.textContent = 'Register';
+            subtitle.textContent = 'Create an account to sync data across devices';
+            submitBtn.textContent = 'Register';
+            switchText.textContent = 'Already have an account?';
+            switchBtn.textContent = 'Login';
+        }
+    }
+
+    async function handleAuth(e) {
+        e.preventDefault();
+        const username = document.getElementById('auth-username').value.trim();
+        const password = document.getElementById('auth-password').value;
+
+        if (!username || !password) {
+            showToast('Please fill in both username and password', 'error');
+            return;
+        }
+
+        const endpoint = isLoginMode ? '/login' : '/register';
+        const submitBtn = document.getElementById('btn-submit-auth');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Processing...';
+
+        try {
+            const result = await apiRequest(endpoint, 'POST', { username, password });
+            localStorage.setItem(API_KEY_KEY, result.api_key);
+            showToast(isLoginMode ? 'Login successful!' : 'Registration successful!', 'success');
+            closeAuthModal();
+            updateSyncButton();
+            
+            // Load data from cloud after successful auth
+            await loadFromCloud();
+            render();
+        } catch (error) {
+            showToast(error.message || 'Authentication failed', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = isLoginMode ? 'Login' : 'Register';
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem(API_KEY_KEY);
+        showToast('Logged out successfully', 'info');
+        updateSyncButton();
+        loadFromLocal();
+        render();
+    }
+
     // ──── Event Binding ────
     function bindEvents() {
         // Add topic form
@@ -888,6 +1060,44 @@
             toggleBtn.querySelector('svg').style.transform = isHidden ? '' : 'rotate(180deg)';
         });
 
+        // Authentication modal
+        document.getElementById('auth-form').addEventListener('submit', handleAuth);
+        document.getElementById('btn-cancel-auth').addEventListener('click', closeAuthModal);
+        document.getElementById('btn-switch-auth').addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            updateAuthModalUI();
+        });
+
+        // Sync button
+        document.getElementById('btn-sync').addEventListener('click', async () => {
+            const apiKey = localStorage.getItem(API_KEY_KEY);
+            if (apiKey) {
+                // If logged in, sync data
+                const syncText = document.getElementById('sync-text');
+                syncText.textContent = 'Syncing...';
+                try {
+                    await saveToCloud();
+                    await loadFromCloud();
+                    render();
+                    showToast('Data synced successfully!', 'success');
+                } catch (error) {
+                    showToast('Sync failed: ' + error.message, 'error');
+                } finally {
+                    syncText.textContent = 'Sync';
+                }
+            } else {
+                // If not logged in, open auth modal
+                openAuthModal();
+            }
+        });
+
+        // Update sync button text based on auth status
+        function updateSyncButton() {
+            const syncText = document.getElementById('sync-text');
+            const apiKey = localStorage.getItem(API_KEY_KEY);
+            syncText.textContent = apiKey ? 'Sync' : 'Login';
+        }
+
         // Export / Import
         document.getElementById('btn-export').addEventListener('click', exportData);
         document.getElementById('btn-theme-toggle').addEventListener('click', toggleTheme);
@@ -923,6 +1133,11 @@
         });
         document.getElementById('delete-modal').addEventListener('click', (e) => {
             if (e.target === e.currentTarget) closeDeleteModal();
+        });
+
+        // Auth modal
+        document.getElementById('auth-modal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeAuthModal();
         });
 
         // Keyboard: Escape to close modals

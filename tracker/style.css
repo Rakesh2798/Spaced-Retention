@@ -1110,6 +1110,66 @@ tbody td {
     margin-top: 20px;
 }
 
+/* ===== Auth Form ===== */
+.auth-form {
+    margin-top: 16px;
+}
+
+.auth-form .form-group {
+    margin-bottom: 12px;
+}
+
+.auth-form .form-group label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.auth-form .form-group input {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-family: var(--font);
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    transition: all var(--transition-fast);
+    outline: none;
+    width: 100%;
+}
+
+.auth-form .form-group input:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.auth-switch {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--accent-secondary);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 4px;
+    transition: color var(--transition-fast);
+}
+
+.btn-link:hover {
+    color: var(--accent-primary);
+    text-decoration: underline;
+}
+
 @keyframes modalFadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
