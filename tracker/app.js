@@ -2,8 +2,8 @@
    Spaced Retention — Application Logic
    ============================================================
    Each topic stores its own explicit reviewDates array.
-   For new topics, dates are computed from study date using
-   cumulative intervals: +2, +6, +14, +29, +51, +81, +112, +173 days.
+   For new topics, each review date is the prior checkpoint plus a fixed gap:
+   +2, +4, +8, +15, +22, +28, +31, +61 days (R1 from studied date).
    Data persisted in localStorage.
    ============================================================ */
 
@@ -15,9 +15,11 @@
     const STREAK_KEY = 'spacedRetention_streak';
     const SEEDED_KEY = 'spacedRetention_seeded_v2';
     const TOPIC_TABS_KEY = 'spacedRetention_topic_tabs';
+    const THEME_KEY = 'spacedRetention_theme';
 
-    // Default intervals (cumulative days from study date) for NEW topics
-    const REVIEW_INTERVALS = [1, 3, 7, 14, 21, 28, 30, 60];
+    // Days added after each checkpoint (studied date for R1, prior review for R2+)
+    const REVIEW_GAPS = [2, 4, 8, 15, 22, 28, 31, 61];
+    // Legacy flat offsets from studied date (incorrect — used only for migration)
     const OLD_REVIEW_INTERVALS = [1, 3, 7, 14, 21, 28, 30, 60];
     const REVIEW_LABELS = ['+1 Day', '+3 Days', '+7 Days', '+14 Days', '+21 Days', '+28 Days', '+30 Days', '+60 Days'];
 
@@ -85,7 +87,13 @@
     }
 
     function computeReviewDates(studiedDate) {
-        return REVIEW_INTERVALS.map(days => addDays(studiedDate, days));
+        const dates = [];
+        let anchor = studiedDate;
+        for (const gap of REVIEW_GAPS) {
+            anchor = addDays(anchor, gap);
+            dates.push(anchor);
+        }
+        return dates;
     }
 
     function matchesOldReviewSchedule(topic) {
@@ -118,6 +126,38 @@
 
     function filteredTopicsByTab() {
         return topics.filter(topicBelongsToActiveTab);
+    }
+
+    // ──── Theme ────
+    function getTheme() {
+        return document.documentElement.getAttribute('data-theme') || 'dark';
+    }
+
+    function updateThemeToggleUI(theme) {
+        const btn = document.getElementById('btn-theme-toggle');
+        if (!btn) return;
+
+        const isDark = theme === 'dark';
+        const label = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+        btn.title = label;
+        btn.setAttribute('aria-label', label);
+    }
+
+    function setTheme(theme) {
+        const nextTheme = theme === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', nextTheme);
+        localStorage.setItem(THEME_KEY, nextTheme);
+        updateThemeToggleUI(nextTheme);
+    }
+
+    function toggleTheme() {
+        setTheme(getTheme() === 'dark' ? 'light' : 'dark');
+    }
+
+    function initTheme() {
+        const saved = localStorage.getItem(THEME_KEY);
+        const theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        setTheme(theme);
     }
 
     // ──── Persistence ────
@@ -850,6 +890,7 @@
 
         // Export / Import
         document.getElementById('btn-export').addEventListener('click', exportData);
+        document.getElementById('btn-theme-toggle').addEventListener('click', toggleTheme);
         document.getElementById('btn-import').addEventListener('click', () => {
             document.getElementById('import-file').click();
         });
@@ -895,6 +936,7 @@
 
     // ──── Init ────
     function init() {
+        initTheme();
         load();
         seedIfNeeded();
         bindEvents();

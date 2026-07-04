@@ -1,16 +1,5 @@
 /* ===== Design Tokens ===== */
 :root {
-    --bg-primary: #0a0a0f;
-    --bg-secondary: #111118;
-    --bg-elevated: #16161f;
-    --bg-glass: rgba(22, 22, 35, 0.65);
-    --bg-glass-hover: rgba(30, 30, 48, 0.75);
-
-    --text-primary: #eaeaf0;
-    --text-secondary: #9494a8;
-    --text-muted: #5c5c72;
-    --text-on-accent: #ffffff;
-
     --accent-primary: #6366f1;
     --accent-secondary: #818cf8;
     --accent-glow: rgba(99, 102, 241, 0.25);
@@ -27,25 +16,76 @@
     --sky: #38bdf8;
     --sky-glow: rgba(56, 189, 248, 0.15);
 
-    --border: rgba(255, 255, 255, 0.06);
-    --border-strong: rgba(255, 255, 255, 0.1);
-    --border-accent: rgba(99, 102, 241, 0.3);
-
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
     --radius-xl: 20px;
-
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
-    --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
-    --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
-    --shadow-glow: 0 0 40px var(--accent-glow);
 
     --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
 
     --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #111118;
+    --bg-elevated: #16161f;
+    --bg-glass: rgba(22, 22, 35, 0.65);
+    --bg-glass-hover: rgba(30, 30, 48, 0.75);
+
+    --text-primary: #eaeaf0;
+    --text-secondary: #9494a8;
+    --text-muted: #5c5c72;
+    --text-on-accent: #ffffff;
+
+    --border: rgba(255, 255, 255, 0.06);
+    --border-strong: rgba(255, 255, 255, 0.1);
+    --border-accent: rgba(99, 102, 241, 0.3);
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --shadow-glow: 0 0 40px var(--accent-glow);
+
+    --overlay-bg: rgba(0, 0, 0, 0.6);
+    --row-hover: rgba(99, 102, 241, 0.04);
+    --badge-future-bg: rgba(255, 255, 255, 0.03);
+    --tab-count-bg: rgba(255, 255, 255, 0.1);
+    --orb-opacity: 0.35;
+}
+
+html[data-theme="light"] {
+    color-scheme: light;
+
+    --bg-primary: #f4f4f8;
+    --bg-secondary: #eaeaf0;
+    --bg-elevated: #ffffff;
+    --bg-glass: rgba(255, 255, 255, 0.82);
+    --bg-glass-hover: rgba(255, 255, 255, 0.96);
+
+    --text-primary: #18181f;
+    --text-secondary: #4b4b5f;
+    --text-muted: #7a7a90;
+    --text-on-accent: #ffffff;
+
+    --border: rgba(0, 0, 0, 0.08);
+    --border-strong: rgba(0, 0, 0, 0.12);
+    --border-accent: rgba(99, 102, 241, 0.35);
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.1);
+    --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.12);
+
+    --overlay-bg: rgba(15, 15, 25, 0.45);
+    --row-hover: rgba(99, 102, 241, 0.06);
+    --badge-future-bg: rgba(0, 0, 0, 0.04);
+    --tab-count-bg: rgba(0, 0, 0, 0.06);
+    --orb-opacity: 0.18;
 }
 
 /* ===== Reset & Base ===== */
@@ -70,6 +110,7 @@ body {
     line-height: 1.6;
     overflow-x: hidden;
     position: relative;
+    transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 /* ===== Ambient Background ===== */
@@ -88,8 +129,9 @@ body {
     position: absolute;
     border-radius: 50%;
     filter: blur(100px);
-    opacity: 0.35;
+    opacity: var(--orb-opacity);
     animation: orbFloat 20s ease-in-out infinite;
+    transition: opacity var(--transition-normal);
 }
 
 .orb-1 {
@@ -119,7 +161,6 @@ body {
     left: 30%;
     animation-duration: 22s;
     animation-delay: -12s;
-    opacity: 0.2;
 }
 
 @keyframes orbFloat {
@@ -187,6 +228,41 @@ body {
 .header-right {
     display: flex;
     gap: 8px;
+    align-items: center;
+}
+
+#btn-theme-toggle {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    justify-content: center;
+}
+
+#btn-theme-toggle .icon-sun,
+#btn-theme-toggle .icon-moon {
+    stroke: #000000 !important;
+    stroke-width: 2.5 !important;
+}
+
+html[data-theme="dark"] #btn-theme-toggle .icon-sun,
+html[data-theme="dark"] #btn-theme-toggle .icon-moon {
+    stroke: #ffffff !important;
+}
+
+#btn-theme-toggle .icon-sun {
+    display: none;
+}
+
+html[data-theme="dark"] #btn-theme-toggle .icon-sun {
+    display: block;
+}
+
+#btn-theme-toggle .icon-moon {
+    display: block;
+}
+
+html[data-theme="dark"] #btn-theme-toggle .icon-moon {
+    display: none;
 }
 
 /* ===== Topic Tabs ===== */
@@ -291,7 +367,7 @@ body {
     opacity: 0.7;
     font-size: 0.72rem;
     font-weight: 700;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--tab-count-bg);
     padding: 2px 6px;
     border-radius: 999px;
 }
@@ -639,8 +715,12 @@ body {
 }
 
 /* Date picker color fix */
-input[type="date"]::-webkit-calendar-picker-indicator {
+html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(0.7);
+    cursor: pointer;
+}
+
+html[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
 }
 
@@ -776,7 +856,7 @@ tbody tr {
     animation: rowFadeIn 0.3s ease-out;
 }
 
-tbody tr:hover { background: rgba(99, 102, 241, 0.04); }
+tbody tr:hover { background: var(--row-hover); }
 
 tbody td {
     padding: 10px 10px;
@@ -898,7 +978,7 @@ tbody td {
 }
 
 .review-future {
-    background: rgba(255,255,255,0.03);
+    background: var(--badge-future-bg);
     color: var(--text-muted);
     border: 1px solid var(--border);
     font-size: 0.7rem;
@@ -983,7 +1063,7 @@ tbody td {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--overlay-bg);
     backdrop-filter: blur(6px);
     z-index: 1000;
     display: flex;
